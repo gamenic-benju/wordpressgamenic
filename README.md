@@ -5,7 +5,7 @@ Static site for [Gamenic Virtual Studio](https://gamenic-virtual-studio.com) wit
 ## Live Deployments
 
 - **Gamenic Account:** https://wordpressclaude.vercel.app
-- **Benju-Khatiwada Account:** https://wordpressclaude-mocha.vercel.app
+
 
 ## GitHub
 

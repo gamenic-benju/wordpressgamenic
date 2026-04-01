@@ -10,4 +10,4 @@ Static site for [Gamenic Virtual Studio](https://gamenic-virtual-studio.com) wit
 ## GitHub
 
 - https://github.com/gamenic-benju/Gamenic-Claudesite
-- https://github.com/Benju-Khatiwada/Gamenic-Claudesite
+

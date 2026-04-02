@@ -1,0 +1,23 @@
+name: Issue Response Evidence
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  respond-to-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Comment on Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ GitHub Actions detected this issue automatically!\n\nThis is automated evidence that GitHub Actions can respond to GitHub Issues.\n\n- Triggered by: Issue #' + context.issue.number + '\n- Workflow: Issue Response Evidence'
+            })

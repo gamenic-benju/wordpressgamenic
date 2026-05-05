@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC = path.join(__dirname, "static");
 
-const SCRIPT_TAG = '<script src="/js/auth.js"></script>';
+const INLINE_SCRIPT = `<script>(function(){if(sessionStorage.getItem("gvs_auth")==="1")return;var o=document.createElement("div");o.style.cssText="position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:999999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;";o.innerHTML='<div style="background:#1a1a1a;border:1px solid #333;padding:40px;border-radius:12px;width:320px;text-align:center;"><h2 style="color:#fff;margin:0 0 8px;">GVS Site Preview</h2><p style="color:#888;margin:0 0 24px;font-size:14px;">Enter credentials to continue</p><input id="gvs-user" type="text" placeholder="Username" style="width:100%;padding:10px;margin-bottom:12px;background:#111;border:1px solid #333;border-radius:6px;color:#fff;box-sizing:border-box;font-size:14px;"><input id="gvs-pass" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:16px;background:#111;border:1px solid #333;border-radius:6px;color:#fff;box-sizing:border-box;font-size:14px;"><div id="gvs-err" style="color:#ff4444;font-size:13px;margin-bottom:12px;display:none;">Invalid credentials</div><button id="gvs-btn" style="width:100%;padding:11px;background:#e03d3d;border:none;border-radius:6px;color:#fff;font-size:15px;cursor:pointer;">Enter</button></div>';document.documentElement.appendChild(o);function t(){var u=document.getElementById("gvs-user").value,p=document.getElementById("gvs-pass").value;if(u==="test"&&p==="test"){sessionStorage.setItem("gvs_auth","1");o.remove();}else{document.getElementById("gvs-err").style.display="block";}}document.getElementById("gvs-btn").addEventListener("click",t);document.getElementById("gvs-pass").addEventListener("keydown",function(e){if(e.key==="Enter")t();});})()</script>`;
 
 const htmlFiles = fs
   .readdirSync(STATIC)
@@ -16,10 +16,14 @@ let updated = 0;
 
 for (const file of htmlFiles) {
   let html = fs.readFileSync(file, "utf8");
-  if (html.includes("auth.js")) continue;
-  html = html.replace("</head>", `${SCRIPT_TAG}\n</head>`);
+  // Remove old external script tag if present
+  html = html.replace('<script src="/js/auth.js"></script>\n', "");
+  html = html.replace('<script src="/js/auth.js"></script>', "");
+  // Add inline script if not already present
+  if (html.includes("gvs_auth")) continue;
+  html = html.replace("</head>", `${INLINE_SCRIPT}\n</head>`);
   fs.writeFileSync(file, html);
   updated++;
 }
 
-console.log(`Injected auth script into ${updated} HTML files.`);
+console.log(`Injected inline auth into ${updated} HTML files.`);

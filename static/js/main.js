@@ -283,97 +283,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    function getApiRootAjaxUrl() {
-      const apiLink = document.querySelector('link[rel="https://api.w.org/"]');
-      const href = apiLink ? apiLink.getAttribute('href') : '';
-      if (!href) return '';
-
-      try {
-        const apiUrl = new URL(href, window.location.href);
-        const root = apiUrl.pathname.replace(/\/wp-json\/?$/, '/');
-        apiUrl.pathname = root.replace(/\/+$/, '') + '/wp-admin/admin-ajax.php';
-        apiUrl.search = '';
-        apiUrl.hash = '';
-        return apiUrl.toString();
-      } catch (error) {
-        return '';
-      }
-    }
-
-    function getAjaxEndpointCandidates(formEl) {
-      const candidates = [];
-      const pushCandidate = (url) => {
-        if (!url || typeof url !== 'string') return;
-        const trimmed = url.trim();
-        if (!trimmed) return;
-        if (!candidates.includes(trimmed)) candidates.push(trimmed);
-      };
-
-      pushCandidate(formEl.getAttribute('action'));
-      pushCandidate(formEl.action);
-
-      if (window.gamenicConfig) {
-        pushCandidate(window.gamenicConfig.ajaxUrl);
-        if (Array.isArray(window.gamenicConfig.ajaxUrls)) {
-          window.gamenicConfig.ajaxUrls.forEach(pushCandidate);
-        }
-      }
-
-      pushCandidate(getApiRootAjaxUrl());
-      pushCandidate(window.location.origin + '/wp-admin/admin-ajax.php');
-
-      return candidates;
-    }
-
-    async function postFormWithFallback(formEl, defaultMessage) {
-      const endpoints = getAjaxEndpointCandidates(formEl);
-      const formData = new FormData(formEl);
-      let lastError = null;
-
-      for (let i = 0; i < endpoints.length; i++) {
-        const endpoint = endpoints[i];
-        let response;
-        let payload = {};
-
-        try {
-          response = await fetch(endpoint, {
-            method: 'POST',
-            body: formData,
-            headers: { Accept: 'application/json' },
-            credentials: 'same-origin'
-          });
-        } catch (networkError) {
-          lastError = new Error(defaultMessage);
-          continue;
-        }
-
-        const raw = await response.text();
-        try {
-          payload = raw ? JSON.parse(raw) : {};
-        } catch (e) {
-          payload = {};
-        }
-
-        if (response.status === 404 && i < endpoints.length - 1) {
-          lastError = new Error('Form endpoint not found (HTTP 404).');
-          continue;
-        }
-
-        if (!response.ok || !payload.success) {
-          const message = payload && payload.data && payload.data.message
-            ? payload.data.message
-            : (response.status ? `${defaultMessage} (HTTP ${response.status}).` : defaultMessage);
-          throw new Error(message);
-        }
-
-        return payload;
-      }
-
-      throw lastError || new Error(defaultMessage);
-    }
-
     async function submitContactForm() {
-      return postFormWithFallback(form, 'Message could not be sent right now. Please try again later.');
+      const name = form.querySelector('[name="name"]').value.trim();
+      const email = form.querySelector('[name="email"]').value.trim();
+      const subject = form.querySelector('[name="subject"]').value.trim();
+      const message = form.querySelector('[name="message"]').value.trim();
+
+      await fetch(
+        'https://script.google.com/macros/s/AKfycbz8vlLOKkXVpv09BtznIMpM-Fmbg3F0YHH95UjaR-4K1RLpoXUuUCPcmfGeS5rIiKKm/exec',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ name, email, subject, message })
+        }
+      );
     }
 
     function showFormStatus(message, isError) {

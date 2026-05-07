@@ -1194,97 +1194,25 @@ document.addEventListener('DOMContentLoaded', () => {
       ['name', 'email', 'portfolio', 'message'].forEach(name => setFieldError(name, ''));
     }
 
-    function getApiRootAjaxUrl() {
-      const apiLink = document.querySelector('link[rel="https://api.w.org/"]');
-      const href = apiLink ? apiLink.getAttribute('href') : '';
-      if (!href) return '';
-
-      try {
-        const apiUrl = new URL(href, window.location.href);
-        const root = apiUrl.pathname.replace(/\/wp-json\/?$/, '/');
-        apiUrl.pathname = root.replace(/\/+$/, '') + '/wp-admin/admin-ajax.php';
-        apiUrl.search = '';
-        apiUrl.hash = '';
-        return apiUrl.toString();
-      } catch (error) {
-        return '';
-      }
-    }
-
-    function getAjaxEndpointCandidates(formEl) {
-      const candidates = [];
-      const pushCandidate = (url) => {
-        if (!url || typeof url !== 'string') return;
-        const trimmed = url.trim();
-        if (!trimmed) return;
-        if (!candidates.includes(trimmed)) candidates.push(trimmed);
-      };
-
-      pushCandidate(formEl.getAttribute('action'));
-      pushCandidate(formEl.action);
-
-      if (window.gamenicConfig) {
-        pushCandidate(window.gamenicConfig.ajaxUrl);
-        if (Array.isArray(window.gamenicConfig.ajaxUrls)) {
-          window.gamenicConfig.ajaxUrls.forEach(pushCandidate);
-        }
-      }
-
-      pushCandidate(getApiRootAjaxUrl());
-      pushCandidate(window.location.origin + '/wp-admin/admin-ajax.php');
-      return candidates;
-    }
-
     async function postFormWithFallback(formEl, defaultMessage) {
-      const endpoints = getAjaxEndpointCandidates(formEl);
-      const formData = new FormData(formEl);
-      let lastError = null;
+      const name = (formEl.querySelector('#career-name')?.value || '').trim();
+      const email = (formEl.querySelector('#career-email')?.value || '').trim();
+      const portfolio = (formEl.querySelector('#career-portfolio')?.value || '').trim();
+      const message = (formEl.querySelector('#career-message')?.value || '').trim();
+      const jobTitle = (formEl.querySelector('#career-job-title-input')?.value || '').trim();
 
-      for (let i = 0; i < endpoints.length; i++) {
-        const endpoint = endpoints[i];
-        let response;
-        let result = {};
-
-        try {
-          response = await fetch(endpoint, {
-            method: 'POST',
-            body: formData,
-            headers: {
-              Accept: 'application/json'
-            },
-            credentials: 'same-origin'
-          });
-        } catch (networkError) {
-          lastError = new Error(defaultMessage);
-          continue;
+      const response = await fetch(
+        'https://script.google.com/macros/s/AKfycbz8vlLOKkXVpv09BtznIMpM-Fmbg3F0YHH95UjaR-4K1RLpoXUuUCPcmfGeS5rIiKKm/exec',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ type: 'career', name, email, portfolio, jobTitle, message })
         }
+      );
 
-        const rawResponse = await response.text();
-        try {
-          result = rawResponse ? JSON.parse(rawResponse) : {};
-        } catch (jsonError) {
-          result = {};
-        }
-
-        if (response.status === 404 && i < endpoints.length - 1) {
-          lastError = new Error('Form endpoint not found (HTTP 404).');
-          continue;
-        }
-
-        if (!response.ok || !result.success) {
-          const serverMessage = (result && result.data && result.data.message)
-            || (result && result.message)
-            || '';
-          const fallbackMessage = response.status
-            ? (defaultMessage + ' (HTTP ' + response.status + ').')
-            : defaultMessage;
-          throw new Error(serverMessage || fallbackMessage);
-        }
-
-        return result;
+      if (!response.ok) {
+        throw new Error(defaultMessage);
       }
-
-      throw lastError || new Error(defaultMessage);
     }
 
     function toggleCareerModal(open) {
